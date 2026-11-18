@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ticket Pay</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%2321c98f'/><path d='M8 12h16v3a2 2 0 000 4v3H8v-3a2 2 0 000-4z' fill='none' stroke='white' stroke-width='2'/><path d='M13 16.5l2 2 4-4' stroke='white' stroke-width='2' fill='none'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e4eae7;--sf:#e9efec;--tx:#14201b;--mu:#6b7b74;--ac:#1fc98e;--ac2:#13a673;--hi:#fff;--sh:#b9c4bf;--bad:#e5484d;--warn:#e9a23b;
+--out:8px 8px 18px var(--sh),-8px -8px 18px var(--hi);--in:inset 5px 5px 10px var(--sh),inset -5px -5px 10px var(--hi)}
+:root[data-t=dark]{--bg:#161c1a;--sf:#1a211f;--tx:#e7f1ec;--mu:#8a9c94;--hi:#232c29;--sh:#0d1110;--ac:#3be8ae;--ac2:#1fc98e}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font:15px/1.45 Inter,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;transition:background .5s,color .5s}
+h1,h2,h3,.num,button,.nav a{font-family:Manrope,sans-serif}
+#app{display:flex;min-height:100vh}
+nav{position:fixed;z-index:9;display:flex;gap:8px;background:var(--bg)}
+.nav a{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;color:var(--mu);font-weight:700;cursor:pointer;transition:.35s}
+.nav a svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav a.on{color:var(--ac);box-shadow:var(--in)}
+.nav a:hover{color:var(--ac)}
+.logo{display:flex;align-items:center;gap:10px;font:800 20px Manrope;padding:8px 6px 22px}
+.logo i{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;box-shadow:0 6px 16px #1fc98e66}
+main{flex:1;padding:24px 16px 120px;max-width:1100px;width:100%;margin:0 auto;align-self:flex-start}
+.card{background:var(--sf);border-radius:28px;padding:22px;box-shadow:var(--out);margin-bottom:22px;animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.16s}.card:nth-child(4){animation-delay:.24s}
+@keyframes rise{from{opacity:0;transform:translateY(22px) scale(.98)}to{opacity:1;transform:none}}
+.pg{animation:fade .45s both}.auth .row{gap:28px;margin-top:8px}
+.refnote{border-radius:18px;box-shadow:var(--in);padding:14px 16px;margin-bottom:20px;font-size:14px;border-left:4px solid var(--ac)}
+.refnote b{display:block;color:var(--ac);margin-bottom:4px;font-family:Manrope,sans-serif}
+#app.q .card,#app.q .pg{animation:none}
+@keyframes fade{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+h2{font-size:22px;margin-bottom:10px}.mu{color:var(--mu);font-size:13px}
+.big{font:800 46px Manrope;letter-spacing:-1px;margin:6px 0 14px}
+.btn{border:0;cursor:pointer;padding:13px 22px;border-radius:16px;font-weight:700;font-size:14px;color:#04382a;background:linear-gradient(135deg,var(--ac),var(--ac2));box-shadow:0 8px 18px #1fc98e55,inset 0 1px 0 #fff6;transition:.25s}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:scale(.96)}
+.btn.g{background:var(--sf);color:var(--tx);box-shadow:var(--out)}.btn.r{background:var(--bad);color:#fff;box-shadow:none}
+.btn:disabled{opacity:.4;pointer-events:none}.row{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+input,select{width:100%;padding:14px 16px;border:0;border-radius:16px;background:var(--sf);color:var(--tx);box-shadow:var(--in);font:inherit;margin-bottom:12px;outline:0}
+input:focus{box-shadow:var(--in),0 0 0 2px var(--ac)}
+.drop{border-radius:22px;box-shadow:var(--in);padding:34px;text-align:center;color:var(--mu);cursor:pointer;transition:.3s}
+.drop.o{box-shadow:var(--in),0 0 0 2px var(--ac);color:var(--ac)}
+.bar{height:12px;border-radius:9px;box-shadow:var(--in);overflow:hidden;margin:10px 0}.bar b{display:block;height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:9px;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px}
+.qr{border-radius:20px;padding:10px;box-shadow:var(--out);text-align:center;font-size:12px;position:relative}
+.qr img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.dot{position:absolute;top:-5px;left:50%;width:22px;height:10px;border-radius:9px;transform:translateX(-50%);background:var(--warn)}
+.dot.ok{background:var(--ac)}.dot.no{background:var(--bad)}
+table{width:100%;border-collapse:collapse}td,th{padding:10px 6px;text-align:left;font-size:14px;border-bottom:1px solid #8883}
+.tag{padding:3px 10px;border-radius:9px;font-size:12px;font-weight:700;box-shadow:var(--in)}
+.tw{overflow-x:auto}
+#toasts{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99;display:grid;gap:8px}
+.toast{background:var(--sf);box-shadow:var(--out);padding:12px 20px;border-radius:16px;font-weight:700;animation:rise .4s both}
+.auth{max-width:400px;margin:12vh auto;padding:16px;width:100%}.auth .card{padding:30px}
+.cols{display:grid;gap:22px;align-items:start}
+.pth{fill:none;stroke-width:30;stroke-linecap:round}
+.pf{stroke:var(--ac);stroke-dasharray:100;transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px #1fc98e88)}
+.fr{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;cursor:pointer;margin-bottom:12px;transition:.3s;flex-wrap:wrap}
+.fr.on{box-shadow:var(--in)}.fr:not(.on){box-shadow:var(--out)}
+.dots{display:flex;gap:6px}.dots i{width:22px;height:8px;border-radius:6px;box-shadow:var(--in);transition:.5s}.dots i.d{background:var(--ac);box-shadow:0 0 8px #1fc98e88}
+.sm{width:auto;margin:0;padding:8px 10px}
+@media(max-width:899px){nav{bottom:12px;left:12px;right:12px;padding:8px;border-radius:26px;box-shadow:var(--out);justify-content:space-around;overflow-x:auto}.nav a span,.logo{display:none}.nav a{padding:12px}}
+@media(min-width:900px){nav{top:0;left:0;bottom:0;width:250px;flex-direction:column;padding:24px 18px;box-shadow:8px 0 24px #0001}main{margin-left:270px;padding:36px 40px;max-width:1300px}.cols{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
+<div id="toasts"></div><div id="app"></div>
+<script>
+const L={ru:{home:'Главная',wallet:'Кошелёк',ref:'Друзья',set:'Настройки',me:'Профиль',adm:'Админка',chk:'Проверка',out:'Выйти',
+welcome:'Добро пожаловать',sub:'Логин — ваш ник в Telegram. Сдавайте билеты и получайте выплаты на баланс.',nick:'Telegram ник',pass:'Пароль',login:'Войти',reg:'Регистрация',
+bal:'Ваш баланс',per:'+2 ₴ за каждый принятый билет',adv:'Запросить аванс',wd:'Вывести',up:'Загрузить билеты',drop:'Нажмите или перетащите скриншоты',
+comp:'Компенсация',compd:'Доступна, если все 6 билетов за день загружены до 12:00.',today:'Сегодня',reqc:'Запросить компенсацию',hist:'История',
+debt:'Долг по авансу',pers:'Личные данные',card:'Карта',cash:'Наличные',lang:'Язык',theme:'Тема',refT:'Реферальная система',
+refD:'Пригласите друга: бонус 125–200 ₴ после недели его работы. Премия 250 ₴ за 3 друзей и 500 ₴ за 5.',refL:'Скопировать ссылку',
+invited:'Приглашено',working:'Отработали неделю',earn:'Вы получите',copied:'Скопировано',sent:'Заявка отправлена',help:'Поддержка',tg:'Написать в Telegram',
+pend:'На проверке',ok:'Принят',no:'Отклонён',reason:'Причина',save:'Сохранить',appr:'Одобрить',rej:'Отклонить',debtBlock:'Сначала погасите долг',min:'Минимум для вывода 100 ₴',
+rs:['QR не читается','Слишком поздно, система выдала дубликат (возможна компенсация)','Не тот билет'],stat:'Статистика',reqs:'Заявки',pay:'Выплаты',users:'Пользователи',log:'Журнал',csv:'Экспорт CSV',
+tip:'Правила на платформе КиевЦифровой: 5 штук за раз, 6-й через полчаса. Как получить билеты — спросите у админа.',none:'Пока пусто',take:'Копировать QR',
+inc:'Начислено',payout:'К выплате',net:'Чистая прибыль'},
+uk:{home:'Головна',wallet:'Гаманець',ref:'Друзі',set:'Налаштування',me:'Профіль',adm:'Адмінка',chk:'Перевірка',out:'Вийти',welcome:'Ласкаво просимо',
+sub:'Логін — ваш нік у Telegram. Здавайте квитки та отримуйте виплати на баланс.',nick:'Telegram нік',pass:'Пароль',login:'Увійти',reg:'Реєстрація',bal:'Ваш баланс',
+per:'+2 ₴ за кожен прийнятий квиток',adv:'Запросити аванс',wd:'Вивести',up:'Завантажити квитки',drop:'Натисніть або перетягніть скріншоти',comp:'Компенсація',
+compd:'Доступна, якщо всі 6 квитків за день завантажено до 12:00.',today:'Сьогодні',reqc:'Запросити компенсацію',hist:'Історія',debt:'Борг за авансом',pers:'Особисті дані',
+card:'Картка',cash:'Готівка',lang:'Мова',theme:'Тема',refT:'Реферальна система',refD:'Запросіть друга: бонус 125–200 ₴ після тижня його роботи. Премія 250 ₴ за 3 друзів і 500 ₴ за 5.',
+refL:'Скопіювати посилання',invited:'Запрошено',working:'Відпрацювали тиждень',earn:'Ви отримаєте',copied:'Скопійовано',sent:'Заявку надіслано',help:'Підтримка',tg:'Написати в Telegram',
+pend:'На перевірці',ok:'Прийнято',no:'Відхилено',reason:'Причина',save:'Зберегти',appr:'Схвалити',rej:'Відхилити',debtBlock:'Спочатку погасіть борг',min:'Мінімум для виводу 100 ₴',
+rs:['QR не читається','Занадто пізно, система видала дублікат (можлива компенсація)','Не той квиток'],stat:'Статистика',reqs:'Заявки',pay:'Виплати',users:'Користувачі',log:'Журнал',csv:'Експорт CSV',
+tip:'Правила на платформі КиївЦифровий: 5 штук за раз, 6-й через пів години. Як отримати квитки — запитайте в адміна.',none:'Поки порожньо',take:'Копіювати QR',inc:'Нараховано',payout:'До виплати',net:'Чистий прибуток'}};
+const I={home:'<path d="M4 11l8-7 8 7v9H4z"/>',wallet:'<rect x="3" y="6" width="18" height="13" rx="4"/><path d="M16 12.5h2"/>',ref:'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2 2M16.4 16.4l2 2M5.6 18.4l2-2M16.4 7.6l2-2"/>',me:'<circle cx="12" cy="9" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/>',adm:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',chk:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>'};
+Object.assign(L.ru,{rt:'Как это работает',st:['Друг в системе','Неделя работы','6 в день','До 10:00'],sd:['Друг зарегистрировался по вашей ссылке','Сдавал по 5 билетов в день: бонус 125 ₴','6 билетов каждый день целую неделю: бонус 175 ₴','6 билетов каждый день до 10:00: бонус 200 ₴'],pr:'Премии за друзей',prd:'3 друга отработали неделю: 250 ₴. 5 друзей: ещё 500 ₴. Премии отдельные.',fr:'Ваши друзья',paid:'Выплачено',nof:'Пока никого. Отправьте ссылку другу.',rf:'Рефералы',prem:'Премия',mark:'Выплачено'});
+Object.assign(L.uk,{rt:'Як це працює',st:['Друг у системі','Тиждень роботи','6 на день','До 10:00'],sd:['Друг зареєструвався за вашим посиланням','Здавав по 5 квитків на день: бонус 125 ₴','6 квитків щодня цілий тиждень: бонус 175 ₴','6 квитків щодня до 10:00: бонус 200 ₴'],pr:'Премії за друзів',prd:'3 друга відпрацювали тиждень: 250 ₴. 5 друзів: ще 500 ₴. Премії окремі.',fr:'Ваші друзі',paid:'Виплачено',nof:'Поки нікого. Надішліть посилання другу.',rf:'Реферали',prem:'Премія',mark:'Виплачено'});
+const RB=[0,0,125,175,200];let rf=null;
+const friends=n=>Object.entries(db.u).filter(([k,x])=>x.ref==n),fb=x=>RB[x.prog||1];
+const prem=n=>{const w=friends(n).filter(([k,x])=>(x.prog||1)>=2).length;return{w,amt:(w>=3?250:0)+(w>=5?500:0)}};
+function refView(){const u=U(),S=L[lg],f=friends(me),pm=prem(me),sel=f.find(([k])=>k==rf)||f[0],p=sel?(sel[1].prog||1):0,
+P=[[50,160],[150,60],[250,160],[350,60]],d='M50 160C100 160 100 60 150 60S200 160 250 160 300 60 350 60',
+earn=f.reduce((a,[k,x])=>a+fb(x),0)+pm.amt,paid=f.reduce((a,[k,x])=>a+(x.paid||0),0)+(u.premPaid||0);
+const svg=`<svg viewBox="0 0 400 230" style="width:100%;max-width:560px;display:block;margin:auto"><path class="pth" d="${d}" stroke="var(--sh)" opacity=".45"/><path class="pth pf" pathLength="100" d="${d}" style="stroke-dashoffset:${100-Math.max(0,p-1)/3*100}"/>${P.map(([x,y],i)=>`<g style="filter:drop-shadow(3px 5px 5px var(--sh))"><circle cx="${x}" cy="${y}" r="34" fill="var(--sf)" stroke="${p>i?'var(--ac)':'var(--sh)'}" stroke-width="3"/><text x="${x}" y="${y+(i?4:8)}" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="${i?22:26}" fill="${p>i?'var(--ac)':'var(--mu)'}">${p>i?'✓':i+1}</text>${i?`<text x="${x}" y="${y+22}" text-anchor="middle" font-family="Manrope" font-size="12" font-weight="700" fill="var(--mu)">${RB[i+1]} ₴</text>`:''}</g><text x="${x}" y="${i%2?16:218}" text-anchor="middle" font-family="Manrope" font-weight="700" font-size="13" fill="var(--tx)">${S.st[i]}</text>`).join('')}</svg>`;
+return `<div class="card"><h2>${t('refT')}</h2><p class="mu" style="margin:4px 0 12px">${sel?'@'+sel[0]:''}</p>${svg}<ol style="margin:14px 0 0 20px;display:grid;gap:6px">${S.sd.map(x=>`<li>${x}</li>`).join('')}</ol></div>
+<div class="card"><h2>${t('pr')}</h2><p class="mu">${t('prd')}</p><div class="bar"><b style="width:${Math.min(100,pm.w/5*100)}%"></b></div><div class="row" style="justify-content:space-between"><span class="mu">${pm.w}/5 · 3 → 250 ₴ · 5 → 500 ₴</span><b>${pm.amt} ₴</b></div></div>
+<div class="card"><div class="row" style="margin-bottom:16px"><div style="flex:1"><span class="mu">${t('invited')}</span><div class="big" style="font-size:30px;margin:0">${f.length}</div></div><div style="flex:1"><span class="mu">${t('earn')}</span><div class="big" style="font-size:30px;margin:0">${earn} ₴</div></div><div style="flex:1"><span class="mu">${t('paid')}</span><div class="big" style="font-size:30px;margin:0">${paid} ₴</div></div></div>
+<h2>${t('fr')}</h2>${f.map(([k,x])=>`<div class="fr ${sel&&sel[0]==k?'on':''}" data-rf="${k}"><b style="flex:1">@${k}</b><div class="dots">${[1,2,3,4].map(i=>`<i class="${(x.prog||1)>=i?'d':''}"></i>`).join('')}</div><span>${fb(x)} ₴</span><span class="mu">${t('paid')}: ${x.paid||0}</span></div>`).join('')||`<p class="mu">${t('nof')}</p>`}<br><button class="btn" data-cp="${location.origin+location.pathname}?ref=${me}">${t('refL')}</button></div>`}
+function refAdmin(){const S=L[lg],f=Object.entries(db.u).filter(([k,x])=>x.ref),refs=[...new Set(f.map(([k,x])=>x.ref))].filter(n=>prem(n).amt);
+return `<div class="card"><h2>${t('rf')}</h2><div class="tw"><table>${f.map(([k,x])=>`<tr><td>@${k}<br><span class="mu">← @${x.ref}</span></td><td><select class="sm" data-pg="${k}">${[1,2,3,4].map(i=>`<option value="${i}" ${(x.prog||1)==i?'selected':''}>${i}. ${S.st[i-1]}</option>`).join('')}</select></td><td>${fb(x)} ₴</td><td class="mu">${x.paid||0} ₴</td><td><button class="btn sm" data-pd="${k}" ${(x.paid||0)>=fb(x)?'disabled':''}>${t('mark')}</button></td></tr>`).join('')}${refs.map(n=>`<tr><td>@${n}<br><span class="mu">${t('prem')}</span></td><td></td><td>${prem(n).amt} ₴</td><td class="mu">${db.u[n].premPaid||0} ₴</td><td><button class="btn sm" data-pp="${n}" ${(db.u[n].premPaid||0)>=prem(n).amt?'disabled':''}>${t('mark')}</button></td></tr>`).join('')||(f.length?'':`<tr><td class="mu">${t('none')}</td></tr>`)}</table></div></div>`}
+Object.assign(L.ru,{inv:'Вас пригласил(а)',invd:'Зарегистрируйтесь здесь, и приглашение засчитается автоматически: ваш друг получит бонус, когда вы отработаете неделю. Ник друга вводить не нужно. Если у вас уже есть аккаунт, нажмите «Войти»: приглашение действует только при регистрации.'});
+Object.assign(L.uk,{inv:'Вас запросив(ла)',invd:'Зареєструйтесь тут, і запрошення зарахується автоматично: ваш друг отримає бонус, коли ви відпрацюєте тиждень. Нік друга вводити не потрібно. Якщо у вас уже є акаунт, натисніть «Увійти»: запрошення діє лише при реєстрації.'});
+const SB_URL='https://wanikmqcdqgrkxxauidz.supabase.co',SB_KEY='sb_publishable_hs8iO5pK88vc9x_Hr5E6ZA_JAymOouu';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const D=()=>({u:{},q:[],r:[],log:[]});
+let db=D(),me=null,uid=null,lg=localStorage.tplg||'ru',page='home',th=localStorage.tpth||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+const t=k=>L[lg][k]||k,sv=()=>{},$=s=>document.querySelector(s),U=()=>db.u[me];
+const day=()=>new Date().toLocaleDateString('sv',{timeZone:'Europe/Kiev'});
+const toast=m=>{const e=document.createElement('div');e.className='toast';e.textContent=m;$('#toasts').append(e);setTimeout(()=>e.remove(),2600)};
+const ic=k=>`<svg viewBox="0 0 24 24">${I[k]}</svg>`;
+let ak='';
+const add=()=>{};
+const nm=e=>(e||'').replace(/^@/,'').trim().toLowerCase();
+async function act(fn,args,msg){const{error}=await sb.rpc(fn,args);if(error)return toast(error.message);if(msg)toast(msg);await load()}
+async function load(){
+const{data:{session}}=await sb.auth.getSession();
+if(!session){me=null;uid=null;db=D();return render()}
+uid=session.user.id;
+const pr=await sb.from('profiles').select('*');
+if(pr.error||!pr.data.find(x=>x.id==uid)){toast('✕');await sb.auth.signOut();me=null;uid=null;db=D();return render()}
+const by={};db=D();
+pr.data.forEach(x=>{by[x.id]=x.nick;db.u[x.nick]={id:x.id,role:x.role,bal:x.bal,debt:x.debt,card:x.card,ref:x.ref,prog:x.prog,paid:x.paid,premPaid:x.prem_paid,made:Date.parse(x.made)}});
+me=by[uid];const role=db.u[me].role;
+let tq=sb.from('tickets').select(role=='admin'?'id,user_id,s,d,why':'id,user_id,s,d,why,img').order('id',{ascending:false}).limit(role=='admin'?1000:200);
+if(role=='check')tq=tq.eq('s','p');
+const [tk,rq,lg2,fr]=await Promise.all([tq,
+sb.from('requests').select('id,user_id,k,a,st').order('id',{ascending:false}).limit(200),
+role=='admin'?sb.from('log').select('at,who,what').order('id',{ascending:false}).limit(8):{data:[]},
+role=='user'?sb.rpc('my_friends'):{data:[]}]);
+(fr.data||[]).forEach(f=>db.u[f.nick]={role:'user',bal:0,debt:0,card:'',ref:me,prog:f.prog,paid:f.paid});
+db.q=(tk.data||[]).reverse().map(x=>({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img}));
+db.r=(rq.data||[]).map(x=>({id:x.id,u:by[x.user_id]||'',k:x.k,a:x.a,st:x.st}));
+db.log=(lg2.data||[]).reverse().map(x=>[new Date(x.at).toLocaleString(),x.who,x.what]);
+const okp={admin:['adm','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[role];
+if(!okp.includes(page))page=okp[0];
+render()}
+document.documentElement.dataset.t=th;
+function count(el,v){if($('#app').classList.contains('q')){el.dataset.v=v;el.textContent=v+' ₴';return}const s=+el.dataset.v||0;el.dataset.v=v;const t0=performance.now();(function f(n){const p=Math.min(1,(n-t0)/800);el.textContent=Math.round(s+(v-s)*(1-Math.pow(1-p,3)))+' ₴';if(p<1)requestAnimationFrame(f)})(t0)}
+function render(){const u=U();const a=$('#app');
+if(!u){ak='';a.classList.remove('q');const rn=nm(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-z0-9_]/g,'');a.innerHTML=`<div class="auth"><div class="card"><div class="logo" style="display:flex;padding-top:0"><i>${logo()}</i>Ticket Pay</div><h1 style="margin:6px 0 8px">${t('welcome')}</h1><p class="mu" style="margin-bottom:18px">${t('sub')}</p>${rn?`<div class="refnote"><b>${t('inv')} @${rn}</b>${t('invd')}</div>`:''}<input id="n" placeholder="${t('nick')}" autocomplete="username"><input id="p" type="password" placeholder="${t('pass')}"><div class="row"><button class="btn ${rn?'g':''}" id="li">${t('login')}</button><button class="btn ${rn?'':'g'}" id="rg">${t('reg')}</button></div></div></div>`;
+const em=n=>n+'@ticketpay.app';
+$('#li').onclick=async()=>{const n=nm($('#n').value);const{error}=await sb.auth.signInWithPassword({email:em(n),password:$('#p').value});if(error)return toast('✕ '+error.message);page='home';load()};
+$('#rg').onclick=async()=>{const n=nm($('#n').value),p=$('#p').value;if(!/^[a-z0-9_]{3,32}$/.test(n)||p.length<6)return toast('✕ '+t('nick')+' a-z 0-9 _ · '+t('pass')+' 6+');
+const r=nm(new URLSearchParams(location.search).get('ref')||'');
+const{data,error}=await sb.auth.signUp({email:em(n),password:p,options:{data:{nick:n,ref:r}}});if(error)return toast('✕ '+error.message);if(!data.session)return toast('Confirm email is ON in Supabase');page='home';load()};return}
+const tabs=u.role=='admin'?['adm','set']:u.role=='check'?['chk','set']:['home','wallet','ref','me','set'];
+{const k=me+'|'+page;a.classList.toggle('q',k==ak);ak=k}
+a.innerHTML=`<nav class="nav"><div class="logo"><i>${logo()}</i>Ticket Pay</div>${tabs.map(k=>`<a data-p="${k}" class="${page==k?'on':''}">${ic(k)}<span>${t(k)}</span></a>`).join('')}<a id="lo"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M15 8l4 4-4 4M19 12H9"/></svg><span>${t('out')}</span></a></nav><main><div class="pg">${view()}</div></main>`;
+a.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{page=e.dataset.p;render()});$('#lo').onclick=async()=>{await sb.auth.signOut();page='home';load()};
+bind();document.querySelectorAll('[data-v]').forEach(e=>count(e,+e.dataset.t))}
+function logo(){return '<svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.4"><path d="M6 11h20v4a2.5 2.5 0 000 5v4H6v-4a2.5 2.5 0 000-5z"/><path d="M12 17.5l3 3 5-6"/></svg>'}
+const mine=()=>db.q.filter(x=>x.u==me),todayQ=()=>mine().filter(x=>x.d==day());
+function view(){const u=U(),R=db.r;
+if(page=='home'){const tq=todayQ(),n=tq.length,debt=u.debt||0;return `<div class="cols"><div><div class="card"><span class="mu">${t('bal')}</span><div class="big" data-v data-t="${u.bal}">0 ₴</div><p class="mu" style="margin-bottom:14px">${t('per')}</p>${debt?`<p style="color:var(--bad);font-weight:700;margin-bottom:12px">${t('debt')}: ${debt} ₴</p>`:''}<button class="btn" data-rq="advance">${t('adv')}</button></div>
+<div class="card"><h2>${t('up')}</h2><p class="mu" style="margin-bottom:12px">${t('tip')}</p><div class="drop" id="dz">${t('drop')}<input id="f" type="file" accept="image/*" multiple hidden></div></div>
+<div class="card"><h2>${t('comp')}</h2><p class="mu">${t('compd')}</p><div class="bar"><b style="width:${Math.min(100,n/6*100)}%"></b></div><div class="row" style="justify-content:space-between"><button class="btn" data-rq="compensation">${t('reqc')}</button><span class="mu">${t('today')}: ${n}/6</span></div></div></div>
+<div class="card"><h2>${t('hist')}</h2><div class="grid">${mine().slice().reverse().map(q=>`<div class="qr"><i class="dot ${q.s=='ok'?'ok':q.s=='no'?'no':''}"></i><img src="${q.img}"><div>№${q.id}</div>${q.why?`<div class="mu">${q.why}</div>`:''}</div>`).join('')||`<p class="mu">${t('none')}</p>`}</div></div></div>`}
+if(page=='wallet')return `<div class="card"><span class="mu">${t('bal')}</span><div class="big" data-v data-t="${u.bal}">0 ₴</div>${u.debt?`<p style="color:var(--bad);font-weight:700;margin-bottom:12px">${t('debt')}: ${u.debt} ₴</p>`:''}<div class="row"><button class="btn" data-rq="advance">${t('adv')}</button><button class="btn g" data-rq="withdraw">${t('wd')}</button></div><p class="mu" style="margin-top:12px">${t('min')}</p></div>`;
+if(page=='ref')return refView();if(0){const f=Object.entries(db.u).filter(([k,x])=>x.ref==me),w=f.filter(([k,x])=>Date.now()-x.made>6048e5).length,b=(w>=5?500:w>=3?250:0)+w*125;
+return `<div class="card"><h2>${t('refT')}</h2><p class="mu" style="margin:6px 0 16px">${t('refD')}</p><div class="row" style="margin-bottom:16px"><div class="card" style="margin:0;flex:1"><span class="mu">${t('invited')}</span><div class="big" style="font-size:32px">${f.length}</div></div><div class="card" style="margin:0;flex:1"><span class="mu">${t('working')}</span><div class="big" style="font-size:32px">${w}</div></div><div class="card" style="margin:0;flex:1"><span class="mu">${t('earn')}</span><div class="big" style="font-size:32px">${b} ₴</div></div></div><button class="btn" data-cp="${location.origin+location.pathname}?ref=${me}">${t('refL')}</button></div>`}
+if(page=='me')return `<div class="card"><h2>${t('pers')}</h2><p>Telegram: @${me}</p><br><input id="cd" placeholder="${t('card')} / ${t('cash')}" value="${u.card||''}"><button class="btn" id="sc">${t('save')}</button></div><div class="card"><h2>${t('help')}</h2><a href="https://t.me/" class="btn" style="text-decoration:none;display:inline-block">${t('tg')}</a></div>`;
+if(page=='set')return `<div class="card"><h2>${t('lang')}</h2><div class="row"><button class="btn ${lg=='ru'?'':'g'}" data-l="ru">Русский</button><button class="btn ${lg=='uk'?'':'g'}" data-l="uk">Українська</button></div></div><div class="card"><h2>${t('theme')}</h2><button class="btn g" id="th">◐ ${th=='dark'?'Light':'Dark'}</button></div>`;
+if(page=='chk'){const p=db.q.filter(x=>x.s=='p');return `<h2 style="margin-bottom:16px">${t('chk')} · ${p.length}</h2><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">${p.map(q=>`<div class="card qr" style="margin:0"><img src="${q.img}"><b>№${q.id}</b><div class="row" style="justify-content:center;margin-top:8px"><button class="btn g" data-cq="${q.id}">${t('take')}</button><button class="btn" data-ok="${q.id}">✓</button><button class="btn r" data-no="${q.id}">✕</button></div></div>`).join('')||`<p class="mu">${t('none')}</p>`}</div>`}
+if(page=='adm'){const us=Object.entries(db.u).filter(([k,x])=>x.role=='user'),ok=db.q.filter(x=>x.s=='ok').length,inc=ok*2,pay=us.reduce((s,[k,x])=>s+x.bal,0),pr=R.filter(x=>x.st=='open');
+return `<div class="row" style="margin-bottom:22px;align-items:flex-start"><div class="card" style="flex:1;margin:0"><span class="mu">${t('inc')}</span><div class="big">${inc} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('payout')}</span><div class="big">${pay} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('users')}</span><div class="big">${us.length}</div></div></div>
+<div class="card"><h2>${t('reqs')} · ${pr.length}</h2><div class="tw"><table>${pr.map((x,i)=>`<tr><td>@${x.u}</td><td>${x.k}</td><td>${x.a} ₴</td><td>${U&&db.u[x.u]?.card||''}</td><td style="text-align:right"><button class="btn" data-ar="${x.id}">${t('appr')}</button> <button class="btn r" data-rr="${x.id}">${t('rej')}</button></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>
+<div class="card"><h2>${t('pay')}</h2><div class="tw"><table>${us.filter(([k,x])=>x.bal>=100).map(([k,x])=>`<tr><td>@${k}</td><td>${x.card||'—'}</td><td><b>${x.bal} ₴</b></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>
+${refAdmin()}<div class="card"><h2>${t('log')}</h2><div class="tw"><table>${db.log.slice(-8).reverse().map(l=>`<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')}</table></div><br><button class="btn g" id="csv">${t('csv')}</button></div>`}
+}
+function bind(){const q=s=>document.querySelectorAll(s),u=U();
+q('[data-l]').forEach(e=>e.onclick=()=>{lg=e.dataset.l;localStorage.tplg=lg;render()});
+if($('#th'))$('#th').onclick=()=>{th=th=='dark'?'light':'dark';localStorage.tpth=th;document.documentElement.dataset.t=th;render()};
+q('[data-cp]').forEach(e=>e.onclick=()=>{navigator.clipboard?.writeText(e.dataset.cp);toast(t('copied'))});
+if($('#sp'))$('#sp').onclick=()=>{const p=$('#pw');p.textContent=p.textContent.includes('•')?p.dataset.p:'••••••••'};
+if($('#sc'))$('#sc').onclick=async()=>{const{error}=await sb.from('profiles').update({card:$('#cd').value.trim().slice(0,100)}).eq('id',uid);if(error)return toast(error.message);toast(t('sent'));load()};
+q('[data-rq]').forEach(e=>e.onclick=()=>{const k=e.dataset.rq;let a=0;
+if(k=='advance'){if(u.debt)return toast(t('debtBlock'));a=50}
+if(k=='withdraw'){if(u.debt)return toast(t('debtBlock'));if(u.bal<100)return toast(t('min'));a=u.bal}
+if(k=='compensation'){const n=todayQ();if(n.length<6)return;a=n.filter(x=>x.s=='no').length*2;if(!a)return toast('0 ₴')}
+act('create_request',{p_kind:k},t('sent'))});
+const dz=$('#dz');if(dz){const f=$('#f');dz.onclick=()=>f.click();dz.ondragover=e=>{e.preventDefault();dz.classList.add('o')};dz.ondragleave=()=>dz.classList.remove('o');dz.ondrop=e=>{e.preventDefault();up(e.dataTransfer.files)};f.onchange=()=>up(f.files)}
+q('[data-cq]').forEach(e=>e.onclick=async()=>{const x=db.q.find(y=>y.id==e.dataset.cq);try{const b=await (await fetch(x.img)).blob();await navigator.clipboard.write([new ClipboardItem({[b.type]:b})]);toast(t('copied')+' №'+x.id)}catch{toast(t('copied')+' №'+x.id)}});
+q('[data-ok]').forEach(e=>e.onclick=()=>act('review_ticket',{p_id:+e.dataset.ok,p_ok:true,p_why:''}));
+q('[data-no]').forEach(e=>e.onclick=()=>{const i=prompt(t('reason')+':\n'+t('rs').map((r,i)=>(i+1)+') '+r).join('\n'));if(i===null)return;act('review_ticket',{p_id:+e.dataset.no,p_ok:false,p_why:t('rs')[i-1]||i})});
+q('[data-ar]').forEach(e=>e.onclick=()=>act('resolve_request',{p_id:+e.dataset.ar,p_approve:true},t('ok')));
+q('[data-rr]').forEach(e=>e.onclick=()=>act('resolve_request',{p_id:+e.dataset.rr,p_approve:false}));
+q('[data-rf]').forEach(e=>e.onclick=()=>{rf=e.dataset.rf;render()});
+q('[data-pg]').forEach(e=>e.onchange=()=>act('set_progress',{p_nick:e.dataset.pg,p_prog:+e.value}));
+q('[data-pd]').forEach(e=>e.onclick=()=>act('mark_paid',{p_nick:e.dataset.pd},t('ok')));
+q('[data-pp]').forEach(e=>e.onclick=()=>act('mark_prem_paid',{p_nick:e.dataset.pp},t('ok')));
+if($('#csv'))$('#csv').onclick=()=>{const c=db.r.map(r=>[r.u,r.k,r.a,r.st].join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c]));a.download='requests.csv';a.click()}}
+function pay(un){const w=db.u[un];if(w.debt>0){const d=Math.min(w.debt,w.bal);w.debt-=d;w.bal-=d}}
+function up(files){const u=U(),left=6-todayQ().length;[...files].slice(0,Math.max(0,left)).forEach(f=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,320/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+sb.from('tickets').insert({img:c.toDataURL('image/jpeg',.7)}).then(({error})=>{if(error)toast(error.message);else{toast('✓');load()}})};im.src=r.result};r.readAsDataURL(f)});if(left<=0)toast('6/6')}
+load();
+</script></body></html>
