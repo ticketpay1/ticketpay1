@@ -66,6 +66,27 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 6px;text-align:left
 .cd.on{box-shadow:var(--in)}.cd.o{opacity:.4}.cd.td b{color:var(--ac)}.cd .v{font:800 12px Manrope;min-height:15px}
 .cd.wk{box-shadow:none;cursor:default;border:1px dashed #8886}.pos{color:var(--ac2)}.neg{color:var(--bad)}
 @media(max-width:600px){.cd{min-height:48px;font-size:10px;padding:4px 1px;border-radius:10px}.cd .v{font-size:10px}.cal{gap:4px}}
+
+:root.simple{--bg:#f3f5f4;--sf:#fff;--tx:#111917;--mu:#586660;--sh:#d9dfdc;--hi:#fff;--out:0 0 0 1px #dde3e0;--in:inset 0 0 0 1px #c9d1cd}
+:root.simple[data-t=dark]{--bg:#0f1312;--sf:#181d1c;--tx:#eef4f1;--mu:#9aa9a2;--sh:#2a3230;--hi:#232b29;--out:0 0 0 1px #2a3230;--in:inset 0 0 0 1px #3a4340}
+:root.simple h1,:root.simple h2,:root.simple h3,:root.simple .big,:root.simple .btn,:root.simple .nav a,:root.simple .logo{font-family:Inter,sans-serif}
+:root.simple .card{border-radius:12px;padding:18px;margin-bottom:16px;animation:none}
+:root.simple .pg{animation:none}
+:root.simple h2{font-size:18px;margin-bottom:12px}
+:root.simple .big{font-size:28px;letter-spacing:0;margin:4px 0 6px}
+:root.simple .btn{box-shadow:none;border-radius:10px;padding:10px 16px;font-weight:600}
+:root.simple .btn:hover{transform:none;filter:brightness(1.05)}
+:root.simple .btn.g{box-shadow:0 0 0 1px var(--sh) inset}
+:root.simple input,:root.simple select{border-radius:10px;padding:11px 12px}
+:root.simple .nav a{border-radius:10px}
+:root.simple .nav a.on{background:var(--hi);box-shadow:0 0 0 1px var(--sh) inset}
+:root.simple .logo i{box-shadow:none;border-radius:10px}
+:root.simple nav{box-shadow:none;border-right:1px solid var(--sh)}
+:root.simple td,:root.simple th{padding:10px 8px;border-bottom:1px solid var(--sh)}
+:root.simple th{font-size:12px;font-weight:600;color:var(--mu)}
+:root.simple tr:hover td{background:#88888814}
+:root.simple .tag{box-shadow:0 0 0 1px var(--sh) inset}
+@media(max-width:899px){:root.simple nav{border-right:0;border-top:1px solid var(--sh);box-shadow:none;border-radius:16px 16px 0 0;bottom:0;left:0;right:0}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
 <div id="toasts"></div><div id="app"></div>
 <script>
@@ -128,14 +149,16 @@ if(pr.error||!pr.data.find(x=>x.id==uid)){toast('✕');await sb.auth.signOut();m
 const by={};db=D();
 pr.data.forEach(x=>{by[x.id]=x.nick;db.u[x.nick]={id:x.id,role:x.role,bal:x.bal,debt:x.debt,card:x.card,ref:x.ref,prog:x.prog,paid:x.paid,premPaid:x.prem_paid,made:Date.parse(x.made)}});
 me=by[uid];const role=db.u[me].role;
-let tq=sb.from('tickets').select(role=='admin'?'id,user_id,s,d,why':'id,user_id,s,d,why,img').order('id',{ascending:false}).limit(role=='admin'?1000:200);
-if(role=='check')tq=tq.eq('s','p');
-const [tk,rq,lg2,fr]=await Promise.all([tq,
+const mkq=c=>{let q=sb.from('tickets').select(c).order('id',{ascending:false}).limit(role=='admin'?1000:200);if(role=='check')q=q.eq('s','p');return q};
+const base=role=='admin'?'id,user_id,s,d,why':'id,user_id,s,d,why,img';
+arch=null;
+const [tk,rq,lg2,fr]=await Promise.all([mkq(base+',created_at'),
 sb.from('requests').select('id,user_id,k,a,st').order('id',{ascending:false}).limit(200),
 role=='admin'?sb.from('log').select('at,who,what').order('id',{ascending:false}).limit(8):{data:[]},
 role=='user'?sb.rpc('my_friends'):{data:[]}]);
+let tkk=tk;if(tk.error&&/created_at/.test(tk.error.message)){db.noTs=1;tkk=await mkq(base)}
 (fr.data||[]).forEach(f=>db.u[f.nick]={role:'user',bal:0,debt:0,card:'',ref:me,prog:f.prog,paid:f.paid});
-db.q=(tk.data||[]).reverse().map(x=>({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img}));
+db.q=(tkk.data||[]).reverse().map(x=>({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img,ts:x.created_at}));
 if(role=='admin'){const ex=[sb.from('tickets').select('id,user_id,s,d,why,img').eq('s','p').order('id',{ascending:false}).limit(100)];
 if(vas&&db.u[vas])ex.push(sb.from('tickets').select('id,user_id,s,d,why,img').eq('user_id',db.u[vas].id).order('id',{ascending:false}).limit(200));
 const res=await Promise.all(ex),im={};res.forEach(z=>(z.data||[]).forEach(x=>im[x.id]=x));
@@ -145,20 +168,21 @@ db.r=(rq.data||[]).map(x=>({id:x.id,u:by[x.user_id]||'',k:x.k,a:x.a,st:x.st}));
 db.log=(lg2.data||[]).reverse().map(x=>[new Date(x.at).toLocaleString(),x.who,x.what]);
 if(role=='admin'){const[fa,fb2]=await Promise.all([sb.from('fin_people').select('*').order('id'),sb.from('fin_rows').select('*').order('d',{ascending:false}).order('id',{ascending:false}).limit(5000)]);const fe=fa.error||fb2.error;db.fe=fe?fe.message:null;db.fp=fa.data||[];db.fr=fb2.data||[]}
 const erole=(vas&&db.u[vas])?db.u[vas].role:role;
-const okp={admin:['adm','fin','chk','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[erole];
+const okp={admin:['adm','fin','chk','arc','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[erole];
 if(!okp.includes(page))page=okp[0];
 render()}
 document.documentElement.dataset.t=th;
 function count(el,v){if($('#app').classList.contains('q')){el.dataset.v=v;el.textContent=v+' ₴';return}const s=+el.dataset.v||0;el.dataset.v=v;const t0=performance.now();(function f(n){const p=Math.min(1,(n-t0)/800);el.textContent=Math.round(s+(v-s)*(1-Math.pow(1-p,3)))+' ₴';if(p<1)requestAnimationFrame(f)})(t0)}
 function render(){const u=U();const a=$('#app');
-if(!u){ak='';a.classList.remove('q');const rn=nm(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-z0-9_]/g,'');a.innerHTML=`<div class="auth"><div class="card"><div class="logo" style="display:flex;padding-top:0"><i>${logo()}</i>Ticket Pay</div><h1 style="margin:6px 0 8px">${t('welcome')}</h1><p class="mu" style="margin-bottom:18px">${t('sub')}</p>${rn?`<div class="refnote"><b>${t('inv')} @${rn}</b>${t('invd')}</div>`:''}<input id="n" placeholder="${t('nick')}" autocomplete="username"><input id="p" type="password" placeholder="${t('pass')}"><div class="row"><button class="btn ${rn?'g':''}" id="li">${t('login')}</button><button class="btn ${rn?'':'g'}" id="rg">${t('reg')}</button></div></div></div>`;
+if(!u){ak='';a.classList.remove('q');document.documentElement.classList.remove('simple');const rn=nm(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-z0-9_]/g,'');a.innerHTML=`<div class="auth"><div class="card"><div class="logo" style="display:flex;padding-top:0"><i>${logo()}</i>Ticket Pay</div><h1 style="margin:6px 0 8px">${t('welcome')}</h1><p class="mu" style="margin-bottom:18px">${t('sub')}</p>${rn?`<div class="refnote"><b>${t('inv')} @${rn}</b>${t('invd')}</div>`:''}<input id="n" placeholder="${t('nick')}" autocomplete="username"><input id="p" type="password" placeholder="${t('pass')}"><div class="row"><button class="btn ${rn?'g':''}" id="li">${t('login')}</button><button class="btn ${rn?'':'g'}" id="rg">${t('reg')}</button></div></div></div>`;
 const em=n=>n+'@ticketpay.app';
 $('#li').onclick=async()=>{const n=nm($('#n').value);const{error}=await sb.auth.signInWithPassword({email:em(n),password:$('#p').value});if(error)return toast('✕ '+error.message);page='home';load()};
 $('#rg').onclick=async()=>{const n=nm($('#n').value),p=$('#p').value;if(!/^[a-z0-9_]{3,32}$/.test(n)||p.length<6)return toast('✕ '+t('nick')+' a-z 0-9 _ · '+t('pass')+' 6+');
 const r=nm(new URLSearchParams(location.search).get('ref')||'');
 const{data,error}=await sb.auth.signUp({email:em(n),password:p,options:{data:{nick:n,ref:r}}});if(error)return toast('✕ '+error.message);if(!data.session)return toast('Confirm email is ON in Supabase');page='home';load()};return}
-const E_=er(),tabs=E_=='admin'?['adm','fin','chk','set']:E_=='check'?['chk','set']:['home','wallet','ref','me','set'];
+const E_=er(),tabs=E_=='admin'?['adm','fin','chk','arc','set']:E_=='check'?['chk','set']:['home','wallet','ref','me','set'];
 {const k=me+'|'+page;a.classList.toggle('q',k==ak);ak=k}
+document.documentElement.classList.toggle('simple',E_=='admin');
 a.innerHTML=`<nav class="nav"><div class="logo"><i>${logo()}</i>Ticket Pay</div>${tabs.map(k=>`<a data-p="${k}" class="${page==k?'on':''}">${ic(k)}<span>${t(k)}</span></a>`).join('')}<a id="lo"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M15 8l4 4-4 4M19 12H9"/></svg><span>${t('out')}</span></a></nav><main>${swBar()}<div class="pg">${vview()}</div></main>`;
 a.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{page=e.dataset.p;render()});$('#lo').onclick=async()=>{await sb.auth.signOut();page='home';vas=null;load()};
 bind();fbind();document.querySelectorAll('[data-v]').forEach(e=>count(e,+e.dataset.t))}
@@ -166,9 +190,10 @@ function logo(){return '<svg width="22" height="22" viewBox="0 0 32 32" fill="no
 const mine=()=>db.q.filter(x=>x.u==me),todayQ=()=>mine().filter(x=>x.d==day());
 function view(){const u=U(),R=db.r;
 if(page=='fin')return finView();
+if(page=='arc')return archView();
 if(page=='home'){const tq=todayQ(),n=tq.length,debt=u.debt||0;return `<div class="cols"><div><div class="card"><span class="mu">${t('bal')}</span><div class="big" data-v data-t="${u.bal}">0 ₴</div><p class="mu" style="margin-bottom:14px">${t('per')}</p>${debt?`<p style="color:var(--bad);font-weight:700;margin-bottom:12px">${t('debt')}: ${debt} ₴</p>`:''}<button class="btn" data-rq="advance">${t('adv')}</button></div>
-<div class="card"><h2>${t('up')}</h2><p class="mu" style="margin-bottom:12px">${t('tip')}</p><div class="drop" id="dz">${t('drop')}<input id="f" type="file" accept="image/*" multiple hidden></div></div>
-<div class="card"><h2>${t('comp')}</h2><p class="mu">${t('compd')}</p><div class="bar"><b style="width:${Math.min(100,n/6*100)}%"></b></div><div class="row" style="justify-content:space-between"><button class="btn" data-rq="compensation">${t('reqc')}</button><span class="mu">${t('today')}: ${n}/6</span></div></div></div>
+${upCard()}
+${compCard()}</div>
 <div class="card"><h2>${t('hist')}</h2><div class="grid">${mine().slice().reverse().map(q=>`<div class="qr"><i class="dot ${q.s=='ok'?'ok':q.s=='no'?'no':''}"></i><img src="${q.img}"><div>№${q.id}</div>${q.why?`<div class="mu">${q.why}</div>`:''}</div>`).join('')||`<p class="mu">${t('none')}</p>`}</div></div></div>`}
 if(page=='wallet')return `<div class="card"><span class="mu">${t('bal')}</span><div class="big" data-v data-t="${u.bal}">0 ₴</div>${u.debt?`<p style="color:var(--bad);font-weight:700;margin-bottom:12px">${t('debt')}: ${u.debt} ₴</p>`:''}<div class="row"><button class="btn" data-rq="advance">${t('adv')}</button><button class="btn g" data-rq="withdraw">${t('wd')}</button></div><p class="mu" style="margin-top:12px">${t('min')}</p></div>`;
 if(page=='ref')return refView();if(0){const f=Object.entries(db.u).filter(([k,x])=>x.ref==me),w=f.filter(([k,x])=>Date.now()-x.made>6048e5).length,b=(w>=5?500:w>=3?250:0)+w*125;
@@ -180,7 +205,7 @@ if(page=='adm'){const us=Object.entries(db.u).filter(([k,x])=>x.role=='user'),ok
 return `<div class="row" style="margin-bottom:22px;align-items:flex-start"><div class="card" style="flex:1;margin:0"><span class="mu">${t('inc')}</span><div class="big">${inc} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('payout')}</span><div class="big">${pay} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('users')}</span><div class="big">${us.length}</div></div></div>
 <div class="card"><h2>${t('reqs')} · ${pr.length}</h2><div class="tw"><table>${pr.map((x,i)=>`<tr><td>@${x.u}</td><td>${x.k}</td><td>${x.a} ₴</td><td>${U&&db.u[x.u]?.card||''}</td><td style="text-align:right"><button class="btn" data-ar="${x.id}">${t('appr')}</button> <button class="btn r" data-rr="${x.id}">${t('rej')}</button></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>
 <div class="card"><h2>${t('pay')}</h2><div class="tw"><table>${us.filter(([k,x])=>x.bal>=100).map(([k,x])=>`<tr><td>@${k}</td><td>${x.card||'—'}</td><td><b>${x.bal} ₴</b></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div>${finPayBox()}</div>
-${refAdmin()}<div class="card"><h2>${t('log')}</h2><div class="tw"><table>${db.log.slice(-8).reverse().map(l=>`<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')}</table></div><br><button class="btn g" id="csv">${t('csv')}</button></div>`}
+${usersCard()}${refAdmin()}<div class="card"><h2>${t('log')}</h2><div class="tw"><table>${db.log.slice(-8).reverse().map(l=>`<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')}</table></div><br><button class="btn g" id="csv">${t('csv')}</button></div>`}
 }
 function bind(){const q=s=>document.querySelectorAll(s),u=U();
 q('[data-l]').forEach(e=>e.onclick=()=>{lg=e.dataset.l;localStorage.tplg=lg;render()});
@@ -191,7 +216,7 @@ if($('#sc'))$('#sc').onclick=async()=>{const{error}=await sb.from('profiles').up
 q('[data-rq]').forEach(e=>e.onclick=()=>{const k=e.dataset.rq;let a=0;
 if(k=='advance'){if(u.debt)return toast(t('debtBlock'));a=50}
 if(k=='withdraw'){if(u.debt)return toast(t('debtBlock'));if(u.bal<100)return toast(t('min'));a=u.bal}
-if(k=='compensation'){const n=todayQ();if(n.length<6)return;a=n.filter(x=>x.s=='no').length*2;if(!a)return toast('0 ₴')}
+if(k=='compensation'){const n=earlyQ();if(n.length<6)return toast(t('cdl'));a=n.filter(x=>x.s=='no').length*2;if(!a)return toast('0 ₴')}
 act('create_request',{p_kind:k},t('sent'))});
 const dz=$('#dz');if(dz){const f=$('#f');dz.onclick=()=>f.click();dz.ondragover=e=>{e.preventDefault();dz.classList.add('o')};dz.ondragleave=()=>dz.classList.remove('o');dz.ondrop=e=>{e.preventDefault();up(e.dataTransfer.files)};f.onchange=()=>up(f.files)}
 q('[data-cq]').forEach(e=>e.onclick=async()=>{const x=db.q.find(y=>y.id==e.dataset.cq);try{const b=await (await fetch(x.img)).blob();await navigator.clipboard.write([new ClipboardItem({[b.type]:b})]);toast(t('copied')+' №'+x.id)}catch{toast(t('copied')+' №'+x.id)}});
@@ -205,8 +230,8 @@ q('[data-pd]').forEach(e=>e.onclick=()=>act('mark_paid',{p_nick:e.dataset.pd},t(
 q('[data-pp]').forEach(e=>e.onclick=()=>act('mark_prem_paid',{p_nick:e.dataset.pp},t('ok')));
 if($('#csv'))$('#csv').onclick=()=>{const c=db.r.map(r=>[r.u,r.k,r.a,r.st].join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c]));a.download='requests.csv';a.click()}}
 function pay(un){const w=db.u[un];if(w.debt>0){const d=Math.min(w.debt,w.bal);w.debt-=d;w.bal-=d}}
-function up(files){const u=U(),left=6-todayQ().length;[...files].slice(0,Math.max(0,left)).forEach(f=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,320/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-sb.from('tickets').insert({img:c.toDataURL('image/jpeg',.7)}).then(({error})=>{if(error)toast(error.message);else{toast('✓');load()}})};im.src=r.result};r.readAsDataURL(f)});if(left<=0)toast('6/6')}
+function up(files){const left=Math.max(0,6-todayQ().length-stg.length);if(left<=0)return toast('6/6');
+[...files].slice(0,left).forEach(f=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),k=Math.min(1,320/im.width);c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);stg.push(c.toDataURL('image/jpeg',.7));render()};im.src=r.result};r.readAsDataURL(f)})}
 /* ===== FINANCE (admin): калькуляция прибыли, календарь, бонусы, выплаты ===== */
 Object.assign(L.ru,{fin:'Прибыль',ftoday:'Сегодня',fweek:'Эта неделя',frec:'получили',fcost:'расходы',dn:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],wk:'Неделя',
 fadd:'добавил',fsold:'продано',fpay:'платим человеку',fq:'Билеты за день',fb:'Бонус',freason:'За что',fam:'Сумма ₴',fnop:'Сначала добавь человека ниже',fconf:'Удалить человека и все его записи?',fpa:'Сколько выплатил (₴)?',
@@ -219,6 +244,71 @@ fday:'День',fnet:'Чистий прибуток',fppl:'Люди',fname:'Ім
 ftk:'Квитки',fbn:'Бонуси',frf:'Реферальна',fpd:'Виплачено',fdue:'До виплати',fpb:'Виплатив',ftot:'Разом до виплати',fpn:'До виплати = квитки + бонуси + реферальна − вже виплачено. Реферальну відмічай виплаченою в блоці «Реферали».',
 fa1:'Додано квитків',fa2:'Продано',fa3:'Нам заплатили всього ₴',fa4:'Платимо людині ₴',fsave:'Додати',fnone:'За цей день записів немає',fpay2:'До виплати по людях',fbon:'бонус',fpout:'виплата',fnr:'Чистий прибуток = отримали − платимо людям − бонуси. Реферальна в прибуток не входить.'});
 I.fin='<path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 3 5-7"/>';
+
+/* ===== ПРАВКИ: архив, удаление, загрузка, компенсация ===== */
+Object.assign(L.ru,{arc:'Архив',load:'Загрузка…',arall:'Все пользователи',arsall:'Любой статус',arcnt:'Найдено',armore:'Показать ещё',arref:'Обновить',aropen:'Открыть',arrs:'Сбросить',
+usc:'Пользователи',duc:'Удалить пользователя',dun:'Все его билеты и заявки тоже удалятся. Отменить нельзя.',role:'Роль',ubal:'Баланс',
+upS:['Нажми на рамку и выбери скриншоты билетов','Проверь превью, лишнее убери крестиком ✕','Нажми «Отправить»'],upL:'Загружено сегодня',upLeft:'ещё можно',upSend:'Отправить',upClr:'Очистить',upPick:'Выбрать скриншоты',upDrop:'или перетащи их сюда',
+upE:'Сейчас в Киеве {h}. Загрузи все 6 билетов до 10:00, тогда будет доступна компенсация.',upLt:'В Киеве уже {h}: билеты принимаются, но компенсация за сегодня недоступна (нужно до 10:00).',
+cdone:'✓ Все 6 билетов загружены до 10:00, компенсацию можно запросить.',cwait:'Загружено до 10:00: {n}/6. Успей до 10:00.',clate:'Время вышло: до 10:00 загружено {n}/6, компенсация за сегодня недоступна.',
+cnots:'Компенсация пока недоступна: в базе нет времени загрузки (админу выполнить admin_setup.sql).',cdl:'Компенсация доступна, только если все 6 билетов загружены до 10:00',
+compd:'Доступна только если все 6 билетов за день загружены до 10:00 по Киеву.'});
+Object.assign(L.uk,{arc:'Архів',load:'Завантаження…',arall:'Усі користувачі',arsall:'Будь-який статус',arcnt:'Знайдено',armore:'Показати ще',arref:'Оновити',aropen:'Відкрити',arrs:'Скинути',
+usc:'Користувачі',duc:'Видалити користувача',dun:'Усі його квитки та заявки теж видаляться. Скасувати неможливо.',role:'Роль',ubal:'Баланс',
+upS:['Натисни на рамку й обери скріншоти квитків','Перевір превʼю, зайве прибери хрестиком ✕','Натисни «Надіслати»'],upL:'Завантажено сьогодні',upLeft:'ще можна',upSend:'Надіслати',upClr:'Очистити',upPick:'Обрати скріншоти',upDrop:'або перетягни їх сюди',
+upE:'Зараз у Києві {h}. Завантаж усі 6 квитків до 10:00, тоді буде доступна компенсація.',upLt:'У Києві вже {h}: квитки приймаються, але компенсація за сьогодні недоступна (потрібно до 10:00).',
+cdone:'✓ Усі 6 квитків завантажено до 10:00, компенсацію можна запросити.',cwait:'Завантажено до 10:00: {n}/6. Встигни до 10:00.',clate:'Час вийшов: до 10:00 завантажено {n}/6, компенсація за сьогодні недоступна.',
+cnots:'Компенсація поки недоступна: у базі немає часу завантаження (адміну виконати admin_setup.sql).',cdl:'Компенсація доступна, лише якщо всі 6 квитків завантажено до 10:00',
+compd:'Доступна лише якщо всі 6 квитків за день завантажено до 10:00 за Києвом.'});
+I.arc='<rect x="4" y="5" width="16" height="4" rx="1"/><path d="M6 9v9h12V9M10 13h4"/>';
+let stg=[],arch=null,af={u:'',s:'',d:'',n:300},archBusy=false;
+const kz=ts=>new Date(ts).toLocaleString('sv',{timeZone:'Europe/Kiev'}),kyH=()=>new Date().toLocaleString('sv',{timeZone:'Europe/Kiev'}).slice(11,16);
+const earlyQ=()=>mine().filter(x=>x.ts&&kz(x.ts).slice(0,10)==day()&&kz(x.ts).slice(11,16)<'10:00');
+
+function upCard(){const n=todayQ().length,left=Math.max(0,6-n-stg.length),hh=kyH(),early=hh<'10:00',S=L[lg].upS;
+return `<div class="card"><h2>${t('up')}</h2><ol class="mu" style="margin:6px 0 14px 18px;display:grid;gap:4px">${S.map(x=>`<li>${x}</li>`).join('')}</ol>
+<div class="bar"><b style="width:${Math.min(100,n/6*100)}%"></b></div><p style="margin-bottom:10px"><b>${t('upL')}: ${n}/6</b> <span class="mu">· ${t('upLeft')}: ${left}</span></p>
+<p style="margin-bottom:14px;font-weight:700;color:${early?'var(--ac2)':'var(--warn)'}">${(early?t('upE'):t('upLt')).replace('{h}',hh)}</p>
+<div class="drop" id="dz" style="${left?'':'opacity:.5;pointer-events:none'}"><b style="font-size:18px;color:var(--tx)">＋ ${t('upPick')}</b><br><span class="mu">${t('upDrop')}</span><input id="f" type="file" accept="image/*" multiple hidden></div>
+${stg.length?`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));margin:14px 0">${stg.map((x,i)=>`<div class="qr" style="padding:6px"><img src="${x}"><div class="mu" style="cursor:pointer;padding:4px" data-sx="${i}">✕</div></div>`).join('')}</div><div class="row"><button class="btn" id="snd">${t('upSend')} (${stg.length})</button><button class="btn g" id="sclr">${t('upClr')}</button></div>`:''}</div>`}
+function compCard(){const ec=earlyQ().length,m=db.noTs?t('cnots'):ec>=6?t('cdone'):kyH()<'10:00'?t('cwait').replace('{n}',ec):t('clate').replace('{n}',ec);
+return `<div class="card"><h2>${t('comp')}</h2><p class="mu">${t('compd')}</p><div class="bar"><b style="width:${Math.min(100,ec/6*100)}%"></b></div><p style="margin:8px 0 14px;font-weight:700;color:${ec>=6?'var(--ac2)':'var(--mu)'}">${m}</p><button class="btn" data-rq="compensation" ${ec<6?'disabled':''}>${t('reqc')}</button></div>`}
+
+function usersCard(){const us=Object.entries(db.u).filter(([k,x])=>x.role!='admin').sort((a,b)=>a[0]<b[0]?-1:1);
+return `<div class="card"><h2>${t('usc')} · ${us.length}</h2><div class="tw"><table><tr class="mu"><th>@</th><th>${t('role')}</th><th>${t('ubal')}</th><th>${t('card')}</th><th></th></tr>${us.map(([k,x])=>`<tr><td>@${esc(k)}</td><td class="mu">${x.role}</td><td>${x.bal||0} ₴</td><td class="mu">${esc(x.card||'—')}</td><td style="text-align:right"><button class="btn r sm" data-du="${esc(k)}">✕</button></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>`}
+
+async function loadArch(){if(archBusy)return;archBusy=true;let all=[],from=0,ts=!db.noTs;
+for(;;){const r=await sb.from('tickets').select('id,user_id,s,d,why'+(ts?',created_at':'')).order('id',{ascending:false}).range(from,from+999);
+if(r.error&&ts&&/created_at/.test(r.error.message)){ts=false;continue}
+if(r.error){toast(r.error.message);break}
+all=all.concat(r.data);if(r.data.length<1000)break;from+=1000}
+const by={};Object.entries(db.u).forEach(([k,x])=>by[x.id]=k);
+arch=all.map(x=>({id:x.id,u:by[x.user_id]||'?',s:x.s,d:x.d,why:x.why,ts:x.created_at}));archBusy=false;render()}
+function archView(){if(!arch){loadArch();return `<div class="card">${t('load')}</div>`}
+const us=[...new Set(arch.map(x=>x.u))].sort(),tm=x=>x.ts?kz(x.ts).slice(0,16):x.d,
+F=arch.filter(x=>(!af.u||x.u==af.u)&&(!af.s||x.s==af.s)&&(!af.d||(x.ts?kz(x.ts).slice(0,10):x.d)==af.d)),
+tg=s2=>s2=='ok'?`<span class="tag pos">${t('ok')}</span>`:s2=='no'?`<span class="tag neg">${t('no')}</span>`:`<span class="tag">${t('pend')}</span>`;
+return `<div class="card"><h2>${t('arc')} · ${arch.length}</h2><div class="ff"><div><select id="au"><option value="">${t('arall')}</option>${us.map(u2=>`<option value="${esc(u2)}" ${af.u==u2?'selected':''}>@${esc(u2)}</option>`).join('')}</select></div>
+<div><select id="as"><option value="">${t('arsall')}</option>${['p','ok','no'].map(k=>`<option value="${k}" ${af.s==k?'selected':''}>${k=='p'?t('pend'):t(k)}</option>`).join('')}</select></div><div><input id="ad" type="date" value="${af.d}"></div></div>
+<div class="row" style="margin-bottom:12px"><button class="btn g sm" id="arr">${t('arrs')}</button><button class="btn g sm" id="arf">${t('arref')}</button><span class="mu">${t('arcnt')}: ${F.length}</span></div>
+<div class="tw"><table><tr class="mu"><th>№</th><th>@</th><th></th><th></th><th></th><th></th></tr>${F.slice(0,af.n).map(x=>`<tr><td>${x.id}</td><td><b>@${esc(x.u)}</b></td><td class="mu">${tm(x)}</td><td>${tg(x.s)}</td><td class="mu">${esc(x.why||'')}</td><td style="text-align:right"><button class="btn g sm" data-ao="${x.id}">${t('aropen')}</button></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div>
+${F.length>af.n?`<br><button class="btn g" id="arm">${t('armore')}</button>`:''}</div>`}
+async function showImg(id){const{data,error}=await sb.from('tickets').select('img').eq('id',id).single();if(error)return toast(error.message);
+const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:100;background:#000c;display:grid;place-items:center;padding:20px;cursor:pointer';
+d.innerHTML=`<img src="${data.img}" style="max-width:100%;max-height:100%;border-radius:12px;background:#fff">`;d.onclick=()=>d.remove();document.body.append(d)}
+async function sendStg(){const rows=stg.map(img=>({img}));const{error}=await sb.from('tickets').insert(rows);if(error)return toast(error.message);toast('✓ '+rows.length);stg=[];await load()}
+function xbind(){const q=s=>document.querySelectorAll(s);
+if($('#snd'))$('#snd').onclick=()=>sendStg();
+if($('#sclr'))$('#sclr').onclick=()=>{stg=[];render()};
+q('[data-sx]').forEach(e=>e.onclick=()=>{stg.splice(+e.dataset.sx,1);render()});
+q('[data-du]').forEach(e=>e.onclick=async()=>{const k=e.dataset.du;if(!confirm(t('duc')+' @'+k+'?\n'+t('dun')))return;if(vas==k)vas=null;await act('admin_delete_user',{p_nick:k},t('ok'))});
+if($('#au'))$('#au').onchange=e=>{af.u=e.target.value;af.n=300;render()};
+if($('#as'))$('#as').onchange=e=>{af.s=e.target.value;af.n=300;render()};
+if($('#ad'))$('#ad').onchange=e=>{af.d=e.target.value;af.n=300;render()};
+if($('#arr'))$('#arr').onclick=()=>{af={u:'',s:'',d:'',n:300};render()};
+if($('#arf'))$('#arf').onclick=()=>{arch=null;render()};
+if($('#arm'))$('#arm').onclick=()=>{af.n+=300;render()};
+q('[data-ao]').forEach(e=>e.onclick=()=>showImg(+e.dataset.ao))}
 
 let fm=day().slice(0,7),fd=day();
 let vas=null;
@@ -280,6 +370,7 @@ return `<div class="row" style="margin-bottom:22px;align-items:stretch">${stat(t
 <div class="ff"><div><input id="fpn" placeholder="${t('fname')}"></div><div><input id="fpk" placeholder="${t('fnick')}"></div></div><button class="btn" id="fpb">${t('fsave')}</button></div>`}
 
 function fbind(){const q=s=>document.querySelectorAll(s),g=s=>($(s)||{}).value||'',fail=e=>e&&toast(e.message);
+xbind();
 if($('#vas'))$('#vas').onchange=async()=>{vas=$('#vas').value||null;page=null;await load()};
 q('[data-fd]').forEach(e=>e.onclick=()=>{fd=e.dataset.fd;fm=fd.slice(0,7);render()});
 q('[data-fm]').forEach(e=>e.onclick=()=>{if(e.dataset.fm=='t'){fd=day();fm=fd.slice(0,7)}else fm=shM(+e.dataset.fm);render()});
