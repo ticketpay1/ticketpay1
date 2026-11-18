@@ -121,7 +121,7 @@ const nm=e=>(e||'').replace(/^@/,'').trim().toLowerCase();
 async function act(fn,args,msg){const{error}=await sb.rpc(fn,args);if(error)return toast(error.message);if(msg)toast(msg);await load()}
 async function load(){
 const{data:{session}}=await sb.auth.getSession();
-if(!session){me=null;uid=null;db=D();return render()}
+if(!session){me=null;uid=null;vas=null;db=D();return render()}
 uid=session.user.id;
 const pr=await sb.from('profiles').select('*');
 if(pr.error||!pr.data.find(x=>x.id==uid)){toast('✕');await sb.auth.signOut();me=null;uid=null;db=D();return render()}
@@ -136,10 +136,16 @@ role=='admin'?sb.from('log').select('at,who,what').order('id',{ascending:false})
 role=='user'?sb.rpc('my_friends'):{data:[]}]);
 (fr.data||[]).forEach(f=>db.u[f.nick]={role:'user',bal:0,debt:0,card:'',ref:me,prog:f.prog,paid:f.paid});
 db.q=(tk.data||[]).reverse().map(x=>({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img}));
+if(role=='admin'){const ex=[sb.from('tickets').select('id,user_id,s,d,why,img').eq('s','p').order('id',{ascending:false}).limit(100)];
+if(vas&&db.u[vas])ex.push(sb.from('tickets').select('id,user_id,s,d,why,img').eq('user_id',db.u[vas].id).order('id',{ascending:false}).limit(200));
+const res=await Promise.all(ex),im={};res.forEach(z=>(z.data||[]).forEach(x=>im[x.id]=x));
+db.q.forEach(x=>{if(im[x.id])x.img=im[x.id].img});const have=new Set(db.q.map(x=>x.id));
+Object.values(im).forEach(x=>{if(!have.has(x.id))db.q.push({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img})});db.q.sort((a,b)=>a.id-b.id)}
 db.r=(rq.data||[]).map(x=>({id:x.id,u:by[x.user_id]||'',k:x.k,a:x.a,st:x.st}));
 db.log=(lg2.data||[]).reverse().map(x=>[new Date(x.at).toLocaleString(),x.who,x.what]);
 if(role=='admin'){const[fa,fb2]=await Promise.all([sb.from('fin_people').select('*').order('id'),sb.from('fin_rows').select('*').order('d',{ascending:false}).order('id',{ascending:false}).limit(5000)]);const fe=fa.error||fb2.error;db.fe=fe?fe.message:null;db.fp=fa.data||[];db.fr=fb2.data||[]}
-const okp={admin:['adm','fin','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[role];
+const erole=(vas&&db.u[vas])?db.u[vas].role:role;
+const okp={admin:['adm','fin','chk','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[erole];
 if(!okp.includes(page))page=okp[0];
 render()}
 document.documentElement.dataset.t=th;
@@ -151,10 +157,10 @@ $('#li').onclick=async()=>{const n=nm($('#n').value);const{error}=await sb.auth.
 $('#rg').onclick=async()=>{const n=nm($('#n').value),p=$('#p').value;if(!/^[a-z0-9_]{3,32}$/.test(n)||p.length<6)return toast('✕ '+t('nick')+' a-z 0-9 _ · '+t('pass')+' 6+');
 const r=nm(new URLSearchParams(location.search).get('ref')||'');
 const{data,error}=await sb.auth.signUp({email:em(n),password:p,options:{data:{nick:n,ref:r}}});if(error)return toast('✕ '+error.message);if(!data.session)return toast('Confirm email is ON in Supabase');page='home';load()};return}
-const tabs=u.role=='admin'?['adm','fin','set']:u.role=='check'?['chk','set']:['home','wallet','ref','me','set'];
+const E_=er(),tabs=E_=='admin'?['adm','fin','chk','set']:E_=='check'?['chk','set']:['home','wallet','ref','me','set'];
 {const k=me+'|'+page;a.classList.toggle('q',k==ak);ak=k}
-a.innerHTML=`<nav class="nav"><div class="logo"><i>${logo()}</i>Ticket Pay</div>${tabs.map(k=>`<a data-p="${k}" class="${page==k?'on':''}">${ic(k)}<span>${t(k)}</span></a>`).join('')}<a id="lo"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M15 8l4 4-4 4M19 12H9"/></svg><span>${t('out')}</span></a></nav><main><div class="pg">${view()}</div></main>`;
-a.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{page=e.dataset.p;render()});$('#lo').onclick=async()=>{await sb.auth.signOut();page='home';load()};
+a.innerHTML=`<nav class="nav"><div class="logo"><i>${logo()}</i>Ticket Pay</div>${tabs.map(k=>`<a data-p="${k}" class="${page==k?'on':''}">${ic(k)}<span>${t(k)}</span></a>`).join('')}<a id="lo"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M15 8l4 4-4 4M19 12H9"/></svg><span>${t('out')}</span></a></nav><main>${swBar()}<div class="pg">${vview()}</div></main>`;
+a.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{page=e.dataset.p;render()});$('#lo').onclick=async()=>{await sb.auth.signOut();page='home';vas=null;load()};
 bind();fbind();document.querySelectorAll('[data-v]').forEach(e=>count(e,+e.dataset.t))}
 function logo(){return '<svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.4"><path d="M6 11h20v4a2.5 2.5 0 000 5v4H6v-4a2.5 2.5 0 000-5z"/><path d="M12 17.5l3 3 5-6"/></svg>'}
 const mine=()=>db.q.filter(x=>x.u==me),todayQ=()=>mine().filter(x=>x.d==day());
@@ -215,6 +221,16 @@ fa1:'Додано квитків',fa2:'Продано',fa3:'Нам заплат�
 I.fin='<path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 3 5-7"/>';
 
 let fm=day().slice(0,7),fd=day();
+let vas=null;
+Object.assign(L.ru,{swt:'Смотреть как',swm:'Я (админ)',swn:'Режим просмотра: кнопки отключены, чтобы ничего не изменить от чужого имени.'});
+Object.assign(L.uk,{swt:'Дивитись як',swm:'Я (адмін)',swn:'Режим перегляду: кнопки вимкнено, щоб нічого не змінити від чужого імені.'});
+const er=()=>{const u=U();return vas&&db.u[vas]?db.u[vas].role:u.role};
+function swBar(){const u=U();if(!u||u.role!='admin')return '';
+const o=Object.entries(db.u).filter(([k])=>k!=me).sort((a,b)=>(a[1].role>b[1].role?1:a[1].role<b[1].role?-1:a[0]<b[0]?-1:1));
+const ro=vas&&db.u[vas]&&db.u[vas].role=='user';
+return `<div class="card" style="padding:12px 16px;margin-bottom:16px"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="mu" style="white-space:nowrap">👁 ${t('swt')}</span><select id="vas" style="margin:0"><option value="">${t('swm')}</option>${o.map(([k,x])=>`<option value="${esc(k)}" ${vas==k?'selected':''}>@${esc(k)} · ${x.role}</option>`).join('')}</select></div>${ro?`<p class="mu" style="margin-top:8px">${t('swn')}</p>`:''}</div>`}
+function vview(){if(vas&&db.u[vas]&&db.u[vas].role=='user'&&['home','wallet','ref','me'].includes(page)){const r=me;me=vas;try{return `<div style="pointer-events:none">${view()}</div>`}finally{me=r}}return view()}
+
 const n0=v=>+String(v??'').replace(',','.')||0,r2=v=>Math.round(v*100)/100,sg=v=>(v>0?'+':'')+r2(v),
 esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
 dt=s=>new Date(s+'T00:00:00Z'),ds=d=>d.toISOString().slice(0,10),
@@ -264,6 +280,7 @@ return `<div class="row" style="margin-bottom:22px;align-items:stretch">${stat(t
 <div class="ff"><div><input id="fpn" placeholder="${t('fname')}"></div><div><input id="fpk" placeholder="${t('fnick')}"></div></div><button class="btn" id="fpb">${t('fsave')}</button></div>`}
 
 function fbind(){const q=s=>document.querySelectorAll(s),g=s=>($(s)||{}).value||'',fail=e=>e&&toast(e.message);
+if($('#vas'))$('#vas').onchange=async()=>{vas=$('#vas').value||null;page=null;await load()};
 q('[data-fd]').forEach(e=>e.onclick=()=>{fd=e.dataset.fd;fm=fd.slice(0,7);render()});
 q('[data-fm]').forEach(e=>e.onclick=()=>{if(e.dataset.fm=='t'){fd=day();fm=fd.slice(0,7)}else fm=shM(+e.dataset.fm);render()});
 if($('#ftb'))$('#ftb').onclick=()=>fins({d:fd,kind:'tickets',person_id:+g('#ftp'),added:n0(g('#fta')),sold:n0(g('#fts')),received:n0(g('#ftr')),pay:n0(g('#ftg'))});
