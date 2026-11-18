@@ -60,6 +60,12 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 6px;text-align:left
 @media(max-width:899px){nav{bottom:12px;left:12px;right:12px;padding:8px;border-radius:26px;box-shadow:var(--out);justify-content:space-around;overflow-x:auto}.nav a span,.logo{display:none}.nav a{padding:12px}}
 @media(min-width:900px){nav{top:0;left:0;bottom:0;width:250px;flex-direction:column;padding:24px 18px;box-shadow:8px 0 24px #0001}main{margin-left:270px;padding:36px 40px;max-width:1300px}.cols{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ff{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0 12px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr) 1.2fr;gap:6px}.cal .h{font-size:11px;color:var(--mu);text-align:center;font-weight:700}
+.cd{border-radius:14px;padding:6px 3px;min-height:56px;text-align:center;cursor:pointer;box-shadow:var(--out);font-size:12px;display:flex;flex-direction:column;justify-content:space-between;transition:.25s;min-width:0}
+.cd.on{box-shadow:var(--in)}.cd.o{opacity:.4}.cd.td b{color:var(--ac)}.cd .v{font:800 12px Manrope;min-height:15px}
+.cd.wk{box-shadow:none;cursor:default;border:1px dashed #8886}.pos{color:var(--ac2)}.neg{color:var(--bad)}
+@media(max-width:600px){.cd{min-height:48px;font-size:10px;padding:4px 1px;border-radius:10px}.cd .v{font-size:10px}.cal{gap:4px}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
 <div id="toasts"></div><div id="app"></div>
 <script>
@@ -103,7 +109,7 @@ Object.assign(L.ru,{inv:'Вас пригласил(а)',invd:'Зарегистр
 Object.assign(L.uk,{inv:'Вас запросив(ла)',invd:'Зареєструйтесь тут, і запрошення зарахується автоматично: ваш друг отримає бонус, коли ви відпрацюєте тиждень. Нік друга вводити не потрібно. Якщо у вас уже є акаунт, натисніть «Увійти»: запрошення діє лише при реєстрації.'});
 const SB_URL='https://wanikmqcdqgrkxxauidz.supabase.co',SB_KEY='sb_publishable_hs8iO5pK88vc9x_Hr5E6ZA_JAymOouu';
 const sb=supabase.createClient(SB_URL,SB_KEY);
-const D=()=>({u:{},q:[],r:[],log:[]});
+const D=()=>({u:{},q:[],r:[],log:[],fp:[],fr:[],fe:null});
 let db=D(),me=null,uid=null,lg=localStorage.tplg||'ru',page='home',th=localStorage.tpth||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
 const t=k=>L[lg][k]||k,sv=()=>{},$=s=>document.querySelector(s),U=()=>db.u[me];
 const day=()=>new Date().toLocaleDateString('sv',{timeZone:'Europe/Kiev'});
@@ -132,7 +138,8 @@ role=='user'?sb.rpc('my_friends'):{data:[]}]);
 db.q=(tk.data||[]).reverse().map(x=>({id:x.id,u:by[x.user_id]||'',s:x.s,d:x.d,why:x.why,img:x.img}));
 db.r=(rq.data||[]).map(x=>({id:x.id,u:by[x.user_id]||'',k:x.k,a:x.a,st:x.st}));
 db.log=(lg2.data||[]).reverse().map(x=>[new Date(x.at).toLocaleString(),x.who,x.what]);
-const okp={admin:['adm','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[role];
+if(role=='admin'){const[fa,fb2]=await Promise.all([sb.from('fin_people').select('*').order('id'),sb.from('fin_rows').select('*').order('d',{ascending:false}).order('id',{ascending:false}).limit(5000)]);const fe=fa.error||fb2.error;db.fe=fe?fe.message:null;db.fp=fa.data||[];db.fr=fb2.data||[]}
+const okp={admin:['adm','fin','set'],check:['chk','set'],user:['home','wallet','ref','me','set']}[role];
 if(!okp.includes(page))page=okp[0];
 render()}
 document.documentElement.dataset.t=th;
@@ -144,14 +151,15 @@ $('#li').onclick=async()=>{const n=nm($('#n').value);const{error}=await sb.auth.
 $('#rg').onclick=async()=>{const n=nm($('#n').value),p=$('#p').value;if(!/^[a-z0-9_]{3,32}$/.test(n)||p.length<6)return toast('✕ '+t('nick')+' a-z 0-9 _ · '+t('pass')+' 6+');
 const r=nm(new URLSearchParams(location.search).get('ref')||'');
 const{data,error}=await sb.auth.signUp({email:em(n),password:p,options:{data:{nick:n,ref:r}}});if(error)return toast('✕ '+error.message);if(!data.session)return toast('Confirm email is ON in Supabase');page='home';load()};return}
-const tabs=u.role=='admin'?['adm','set']:u.role=='check'?['chk','set']:['home','wallet','ref','me','set'];
+const tabs=u.role=='admin'?['adm','fin','set']:u.role=='check'?['chk','set']:['home','wallet','ref','me','set'];
 {const k=me+'|'+page;a.classList.toggle('q',k==ak);ak=k}
 a.innerHTML=`<nav class="nav"><div class="logo"><i>${logo()}</i>Ticket Pay</div>${tabs.map(k=>`<a data-p="${k}" class="${page==k?'on':''}">${ic(k)}<span>${t(k)}</span></a>`).join('')}<a id="lo"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M15 8l4 4-4 4M19 12H9"/></svg><span>${t('out')}</span></a></nav><main><div class="pg">${view()}</div></main>`;
 a.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{page=e.dataset.p;render()});$('#lo').onclick=async()=>{await sb.auth.signOut();page='home';load()};
-bind();document.querySelectorAll('[data-v]').forEach(e=>count(e,+e.dataset.t))}
+bind();fbind();document.querySelectorAll('[data-v]').forEach(e=>count(e,+e.dataset.t))}
 function logo(){return '<svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.4"><path d="M6 11h20v4a2.5 2.5 0 000 5v4H6v-4a2.5 2.5 0 000-5z"/><path d="M12 17.5l3 3 5-6"/></svg>'}
 const mine=()=>db.q.filter(x=>x.u==me),todayQ=()=>mine().filter(x=>x.d==day());
 function view(){const u=U(),R=db.r;
+if(page=='fin')return finView();
 if(page=='home'){const tq=todayQ(),n=tq.length,debt=u.debt||0;return `<div class="cols"><div><div class="card"><span class="mu">${t('bal')}</span><div class="big" data-v data-t="${u.bal}">0 ₴</div><p class="mu" style="margin-bottom:14px">${t('per')}</p>${debt?`<p style="color:var(--bad);font-weight:700;margin-bottom:12px">${t('debt')}: ${debt} ₴</p>`:''}<button class="btn" data-rq="advance">${t('adv')}</button></div>
 <div class="card"><h2>${t('up')}</h2><p class="mu" style="margin-bottom:12px">${t('tip')}</p><div class="drop" id="dz">${t('drop')}<input id="f" type="file" accept="image/*" multiple hidden></div></div>
 <div class="card"><h2>${t('comp')}</h2><p class="mu">${t('compd')}</p><div class="bar"><b style="width:${Math.min(100,n/6*100)}%"></b></div><div class="row" style="justify-content:space-between"><button class="btn" data-rq="compensation">${t('reqc')}</button><span class="mu">${t('today')}: ${n}/6</span></div></div></div>
@@ -165,7 +173,7 @@ if(page=='chk'){const p=db.q.filter(x=>x.s=='p');return `<h2 style="margin-botto
 if(page=='adm'){const us=Object.entries(db.u).filter(([k,x])=>x.role=='user'),ok=db.q.filter(x=>x.s=='ok').length,inc=ok*2,pay=us.reduce((s,[k,x])=>s+x.bal,0),pr=R.filter(x=>x.st=='open');
 return `<div class="row" style="margin-bottom:22px;align-items:flex-start"><div class="card" style="flex:1;margin:0"><span class="mu">${t('inc')}</span><div class="big">${inc} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('payout')}</span><div class="big">${pay} ₴</div></div><div class="card" style="flex:1;margin:0"><span class="mu">${t('users')}</span><div class="big">${us.length}</div></div></div>
 <div class="card"><h2>${t('reqs')} · ${pr.length}</h2><div class="tw"><table>${pr.map((x,i)=>`<tr><td>@${x.u}</td><td>${x.k}</td><td>${x.a} ₴</td><td>${U&&db.u[x.u]?.card||''}</td><td style="text-align:right"><button class="btn" data-ar="${x.id}">${t('appr')}</button> <button class="btn r" data-rr="${x.id}">${t('rej')}</button></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>
-<div class="card"><h2>${t('pay')}</h2><div class="tw"><table>${us.filter(([k,x])=>x.bal>=100).map(([k,x])=>`<tr><td>@${k}</td><td>${x.card||'—'}</td><td><b>${x.bal} ₴</b></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div></div>
+<div class="card"><h2>${t('pay')}</h2><div class="tw"><table>${us.filter(([k,x])=>x.bal>=100).map(([k,x])=>`<tr><td>@${k}</td><td>${x.card||'—'}</td><td><b>${x.bal} ₴</b></td></tr>`).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}</table></div>${finPayBox()}</div>
 ${refAdmin()}<div class="card"><h2>${t('log')}</h2><div class="tw"><table>${db.log.slice(-8).reverse().map(l=>`<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')}</table></div><br><button class="btn g" id="csv">${t('csv')}</button></div>`}
 }
 function bind(){const q=s=>document.querySelectorAll(s),u=U();
@@ -193,5 +201,77 @@ if($('#csv'))$('#csv').onclick=()=>{const c=db.r.map(r=>[r.u,r.k,r.a,r.st].join(
 function pay(un){const w=db.u[un];if(w.debt>0){const d=Math.min(w.debt,w.bal);w.debt-=d;w.bal-=d}}
 function up(files){const u=U(),left=6-todayQ().length;[...files].slice(0,Math.max(0,left)).forEach(f=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,320/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
 sb.from('tickets').insert({img:c.toDataURL('image/jpeg',.7)}).then(({error})=>{if(error)toast(error.message);else{toast('✓');load()}})};im.src=r.result};r.readAsDataURL(f)});if(left<=0)toast('6/6')}
+/* ===== FINANCE (admin): калькуляция прибыли, календарь, бонусы, выплаты ===== */
+Object.assign(L.ru,{fin:'Прибыль',ftoday:'Сегодня',fweek:'Эта неделя',frec:'получили',fcost:'расходы',dn:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],wk:'Неделя',
+fadd:'добавил',fsold:'продано',fpay:'платим человеку',fq:'Билеты за день',fb:'Бонус',freason:'За что',fam:'Сумма ₴',fnop:'Сначала добавь человека ниже',fconf:'Удалить человека и все его записи?',fpa:'Сколько выплатил (₴)?',
+fday:'День',fnet:'Чистая прибыль',fppl:'Люди',fname:'Имя',fnick:'Telegram ник (если есть, для рефералки)',fsql:'Таблицы ещё не созданы: выполни файл fin_setup.sql в Supabase → SQL Editor и обнови страницу.',
+ftk:'Билеты',fbn:'Бонусы',frf:'Рефералка',fpd:'Выплачено',fdue:'К выплате',fpb:'Выплатил',ftot:'Итого к выплате',fpn:'К выплате = билеты + бонусы + рефералка − уже выплачено. Рефералку отмечай выплаченной в блоке «Рефералы».',
+fa1:'Добавлено билетов',fa2:'Продано',fa3:'Нам заплатили всего ₴',fa4:'Платим человеку ₴',fsave:'Добавить',fnone:'За этот день записей нет',fpay2:'К выплате по людям',fbon:'бонус',fpout:'выплата',fnr:'Чистая прибыль = получили − платим людям − бонусы. Рефералка в прибыль не входит.'});
+Object.assign(L.uk,{fin:'Прибуток',ftoday:'Сьогодні',fweek:'Цей тиждень',frec:'отримали',fcost:'витрати',dn:['Пн','Вт','Ср','Чт','Пт','Сб','Нд'],wk:'Тиждень',
+fadd:'додав',fsold:'продано',fpay:'платимо людині',fq:'Квитки за день',fb:'Бонус',freason:'За що',fam:'Сума ₴',fnop:'Спочатку додай людину нижче',fconf:'Видалити людину та всі її записи?',fpa:'Скільки виплатив (₴)?',
+fday:'День',fnet:'Чистий прибуток',fppl:'Люди',fname:'Імʼя',fnick:'Telegram нік (якщо є, для реферальної)',fsql:'Таблиці ще не створені: виконай файл fin_setup.sql у Supabase → SQL Editor і онови сторінку.',
+ftk:'Квитки',fbn:'Бонуси',frf:'Реферальна',fpd:'Виплачено',fdue:'До виплати',fpb:'Виплатив',ftot:'Разом до виплати',fpn:'До виплати = квитки + бонуси + реферальна − вже виплачено. Реферальну відмічай виплаченою в блоці «Реферали».',
+fa1:'Додано квитків',fa2:'Продано',fa3:'Нам заплатили всього ₴',fa4:'Платимо людині ₴',fsave:'Додати',fnone:'За цей день записів немає',fpay2:'До виплати по людях',fbon:'бонус',fpout:'виплата',fnr:'Чистий прибуток = отримали − платимо людям − бонуси. Реферальна в прибуток не входить.'});
+I.fin='<path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 3 5-7"/>';
+
+let fm=day().slice(0,7),fd=day();
+const n0=v=>+String(v??'').replace(',','.')||0,r2=v=>Math.round(v*100)/100,sg=v=>(v>0?'+':'')+r2(v),
+esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+dt=s=>new Date(s+'T00:00:00Z'),ds=d=>d.toISOString().slice(0,10),
+addD=(s,n)=>{const d=dt(s);d.setUTCDate(d.getUTCDate()+n);return ds(d)},wk=s=>addD(s,-((dt(s).getUTCDay()+6)%7)),
+shM=k=>{const d=dt(fm+'-01');d.setUTCMonth(d.getUTCMonth()+k);return ds(d).slice(0,7)};
+function fmap(){const m={};db.fr.forEach(r=>{const o=m[r.d]||(m[r.d]={net:0,rec:0,cost:0,add:0,sold:0});
+if(r.kind=='tickets'){o.rec+=n0(r.received);o.cost+=n0(r.pay);o.add+=n0(r.added);o.sold+=n0(r.sold)}else if(r.kind=='bonus')o.cost+=n0(r.amount);o.net=o.rec-o.cost});return m}
+function sumR(m,a,b){const o={net:0,rec:0,cost:0,add:0,sold:0};for(let s=a;s<=b;s=addD(s,1)){const x=m[s];if(x)for(const k in o)o[k]+=x[k]}return o}
+const cl=v=>v<0?'neg':v>0?'pos':'';
+async function fins(o){const{error}=await sb.from('fin_rows').insert(o);if(error)return toast(error.message);toast('✓');await load()}
+
+function finPayTbl(){
+const T={};db.fp.forEach(p=>T[p.id]={p,id:p.id,tk:0,bn:0,pd:0});
+db.fr.forEach(r=>{const o=T[r.person_id];if(!o)return;if(r.kind=='tickets')o.tk+=n0(r.pay);else if(r.kind=='bonus')o.bn+=n0(r.amount);else if(r.kind=='payout')o.pd+=n0(r.amount)});
+const refN=n=>friends(n).reduce((a,[k,x])=>a+Math.max(0,fb(x)-(x.paid||0)),0)+Math.max(0,prem(n).amt-((db.u[n]||{}).premPaid||0));
+const nk=new Set(db.fp.map(p=>p.nick).filter(Boolean));
+const R=Object.values(T).map(o=>({...o,rf:o.p.nick?refN(o.p.nick):0}));
+[...new Set(Object.values(db.u).map(x=>x.ref).filter(Boolean))].filter(n=>!nk.has(n)&&refN(n)>0).forEach(n=>R.push({p:{name:'@'+n},tk:0,bn:0,pd:0,rf:refN(n)}));
+const due=o=>o.tk+o.bn-o.pd+o.rf;R.sort((a,b)=>due(b)-due(a));
+const tot=R.reduce((a,o)=>a+Math.max(0,due(o)),0);
+return `<div class="tw"><table><tr class="mu"><th></th><th>${t('ftk')}</th><th>${t('fbn')}</th><th>${t('frf')}</th><th>${t('fpd')}</th><th>${t('fdue')}</th><th></th></tr>${R.map(o=>{const own=o.tk+o.bn-o.pd;
+return `<tr><td>${esc(o.p.name)}${o.p.nick?`<br><span class="mu">@${esc(o.p.nick)}</span>`:''}</td><td>${r2(o.tk)}</td><td>${r2(o.bn)}</td><td>${r2(o.rf)}</td><td class="mu">${r2(o.pd)}</td><td><b>${r2(due(o))} ₴</b></td><td style="text-align:right">${o.id&&own>0?`<button class="btn sm" data-fpay="${o.id}" data-fa="${r2(own)}">${t('fpb')}</button>`:''}</td></tr>`}).join('')||`<tr><td class="mu">${t('none')}</td></tr>`}
+<tr><td><b>${t('ftot')}</b></td><td></td><td></td><td></td><td></td><td><b>${r2(tot)} ₴</b></td><td></td></tr></table></div><p class="mu" style="margin-top:10px">${t('fpn')}</p>`}
+function finPayBox(){return db.fe?'':`<h2 style="margin-top:22px">${t('fpay2')}</h2>${finPayTbl()}`}
+
+function finView(){
+if(db.fe)return `<div class="card"><h2>${t('fin')}</h2><p style="color:var(--bad);font-weight:700;margin:8px 0">${esc(db.fe)}</p><p class="mu">${t('fsql')}</p></div>`;
+const m=fmap(),td=day(),first=fm+'-01',last=addD(ds(new Date(Date.UTC(+fm.slice(0,4),+fm.slice(5,7),1))),-1),
+mn=dt(first).toLocaleDateString(lg=='uk'?'uk':'ru',{month:'long',year:'numeric',timeZone:'UTC'}),
+stat=(l,o)=>`<div class="card" style="flex:1;margin:0;min-width:160px"><span class="mu">${l}</span><div class="big ${cl(o.net)}" style="font-size:30px">${sg(o.net)} ₴</div><span class="mu">${t('frec')} ${r2(o.rec)} · ${t('fcost')} ${r2(o.cost)}</span></div>`;
+let cal=t('dn').map(x=>`<div class="h">${x}</div>`).join('')+`<div class="h">Σ</div>`;
+for(let s=wk(first);s<=last;s=addD(s,7)){for(let i=0;i<7;i++){const c=addD(s,i),o=m[c];
+cal+=`<div class="cd ${c.slice(0,7)==fm?'':'o'} ${c==fd?'on':''} ${c==td?'td':''}" data-fd="${c}"><b>${+c.slice(8)}</b><span class="v ${o?cl(o.net):''}">${o?Math.round(o.net):''}</span></div>`}
+const w=sumR(m,s,addD(s,6));cal+=`<div class="cd wk"><b>Σ</b><span class="v ${cl(w.net)}">${w.rec||w.cost?Math.round(w.net):''}</span></div>`}
+const E=db.fr.filter(r=>r.d==fd),dd=sumR(m,fd,fd),pn=id=>esc((db.fp.find(p=>p.id==id)||{}).name||'?'),
+opts=db.fp.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(''),
+det=r=>r.kind=='tickets'?`${t('fadd')} ${r.added} · ${t('fsold')} ${r.sold} · ${t('frec')} ${r2(n0(r.received))} · ${t('fpay')} ${r2(n0(r.pay))} → <b class="${cl(n0(r.received)-n0(r.pay))}">${sg(n0(r.received)-n0(r.pay))} ₴</b>`:
+r.kind=='bonus'?`${t('fbon')} <b class="neg">−${r2(n0(r.amount))} ₴</b> ${esc(r.note)}`:`${t('fpout')} <b>${r2(n0(r.amount))} ₴</b>`;
+const forms=db.fp.length?`<div class="ff"><div><span class="mu">${t('fppl')}</span><select id="ftp">${opts}</select></div><div><span class="mu">${t('fa1')}</span><input id="fta" type="number" inputmode="decimal"></div><div><span class="mu">${t('fa2')}</span><input id="fts" type="number" inputmode="decimal"></div><div><span class="mu">${t('fa3')}</span><input id="ftr" type="number" inputmode="decimal"></div><div><span class="mu">${t('fa4')}</span><input id="ftg" type="number" inputmode="decimal"></div></div><button class="btn" id="ftb">${t('fsave')}: ${t('fq')}</button>
+<div class="ff" style="margin-top:22px"><div><span class="mu">${t('fppl')}</span><select id="fbp">${opts}</select></div><div><span class="mu">${t('fam')}</span><input id="fba" type="number" inputmode="decimal"></div><div style="grid-column:span 2"><span class="mu">${t('freason')}</span><input id="fbn"></div></div><button class="btn g" id="fbb">${t('fsave')}: ${t('fb')}</button>`:`<p class="mu">${t('fnop')}</p>`;
+return `<div class="row" style="margin-bottom:22px;align-items:stretch">${stat(t('ftoday'),sumR(m,td,td))}${stat(t('fweek'),sumR(m,wk(td),addD(wk(td),6)))}${stat(mn,sumR(m,first,last))}</div>
+<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:14px"><button class="btn g sm" data-fm="-1">‹</button><h2 style="margin:0;text-transform:capitalize">${mn}</h2><div class="row" style="gap:8px"><button class="btn g sm" data-fm="t">${t('ftoday')}</button><button class="btn g sm" data-fm="1">›</button></div></div><div class="cal">${cal}</div><p class="mu" style="margin-top:12px">${t('fnr')}</p></div>
+<div class="card"><h2>${t('fday')}: ${fd}</h2><p class="mu" style="margin-bottom:12px">${t('fnet')}: <b class="${cl(dd.net)}">${sg(dd.net)} ₴</b> · ${t('fadd')} ${dd.add} · ${t('fsold')} ${dd.sold}</p>
+<div class="tw"><table>${E.map(r=>`<tr><td>${pn(r.person_id)}</td><td>${det(r)}</td><td style="text-align:right"><button class="btn r sm" data-fdel="${r.id}">✕</button></td></tr>`).join('')||`<tr><td class="mu">${t('fnone')}</td></tr>`}</table></div><br>${forms}</div>
+<div class="card"><h2>${t('fpay2')}</h2>${finPayTbl()}</div>
+<div class="card"><h2>${t('fppl')}</h2><div class="tw"><table>${db.fp.map(p=>`<tr><td>${esc(p.name)}</td><td class="mu">${p.nick?'@'+esc(p.nick):''}</td><td style="text-align:right"><button class="btn r sm" data-fpdel="${p.id}">✕</button></td></tr>`).join('')}</table></div><br>
+<div class="ff"><div><input id="fpn" placeholder="${t('fname')}"></div><div><input id="fpk" placeholder="${t('fnick')}"></div></div><button class="btn" id="fpb">${t('fsave')}</button></div>`}
+
+function fbind(){const q=s=>document.querySelectorAll(s),g=s=>($(s)||{}).value||'',fail=e=>e&&toast(e.message);
+q('[data-fd]').forEach(e=>e.onclick=()=>{fd=e.dataset.fd;fm=fd.slice(0,7);render()});
+q('[data-fm]').forEach(e=>e.onclick=()=>{if(e.dataset.fm=='t'){fd=day();fm=fd.slice(0,7)}else fm=shM(+e.dataset.fm);render()});
+if($('#ftb'))$('#ftb').onclick=()=>fins({d:fd,kind:'tickets',person_id:+g('#ftp'),added:n0(g('#fta')),sold:n0(g('#fts')),received:n0(g('#ftr')),pay:n0(g('#ftg'))});
+if($('#fbb'))$('#fbb').onclick=()=>{const a=n0(g('#fba'));if(!a)return;fins({d:fd,kind:'bonus',person_id:+g('#fbp'),amount:a,note:g('#fbn').trim().slice(0,200)})};
+if($('#fpb'))$('#fpb').onclick=async()=>{const name=g('#fpn').trim();if(!name)return;const{error}=await sb.from('fin_people').insert({name:name.slice(0,60),nick:nm(g('#fpk'))||null});if(error)return fail(error);await load()};
+q('[data-fdel]').forEach(e=>e.onclick=async()=>{const{error}=await sb.from('fin_rows').delete().eq('id',+e.dataset.fdel);if(error)return fail(error);await load()});
+q('[data-fpdel]').forEach(e=>e.onclick=async()=>{if(!confirm(t('fconf')))return;const{error}=await sb.from('fin_people').delete().eq('id',+e.dataset.fpdel);if(error)return fail(error);await load()});
+q('[data-fpay]').forEach(e=>e.onclick=()=>{const a=n0(prompt(t('fpa'),e.dataset.fa));if(a>0)fins({d:day(),kind:'payout',person_id:+e.dataset.fpay,amount:a})})}
+
 load();
 </script></body></html>
